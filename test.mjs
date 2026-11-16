@@ -6,4 +6,3 @@ const sim=structuredClone(d);sim.cash.push({group:'COF',kind:'cof',amount:500000
 for(const [ratio,full,resp] of [[.6799,false,false],[.68,true,false],[.8499,true,false],[.85,true,true]]){const t=structuredClone(sim);t.ntu=[{pos:ratio*100000000,mindue:100,amount:100,manual:.1,override:null},{pos:(1-ratio)*100000000,mindue:100,amount:0,manual:.1,override:null}];const v=calculate(t);assert.equal(v.paidBonus,v.bonus*(full?1:.8));assert.equal(v.paidResponsibility,resp?10:0);}
 console.log('Passed: base reconciliation, mindue, liquidation, override, bonus boundaries, NTU 68/85%, independent simulation and >100% KPI.');
 
-
