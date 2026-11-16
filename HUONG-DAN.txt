@@ -1,0 +1,91 @@
+HANH MOBILE — BẢN 2 / MÔ HÌNH 5 TỆP
+
+1. CÁC TỆP
+index.html: giao diện, dữ liệu, KPI, bonus, thuế và kết nối đồng bộ.
+Code.gs: API Google Apps Script, chỉ đọc/ghi tab HANH_APP.
+sw.js: lưu giao diện phục vụ ngoại tuyến, không lưu khóa/API vào cache.
+manifest.webmanifest: tên, biểu tượng nhúng, cấu hình cài ứng dụng.
+HUONG-DAN.txt: hướng dẫn này.
+
+2. ĐƯA WEB LÊN HOSTING
+Đặt index.html, sw.js, manifest.webmanifest cùng thư mục trên hosting HTTPS.
+Code.gs chỉ cần dán vào Apps Script; không chạy trực tiếp trong trình duyệt.
+Repo hiện là riêng tư và index.html còn có dữ liệu khởi tạo của chủ sở hữu.
+Không chuyển repo hoặc web sang công khai khi chưa bỏ dữ liệu khách hàng nhúng.
+Repo riêng tư không đồng nghĩa website được bảo vệ bằng đăng nhập.
+Mở file index.html trên máy chỉ để thử; service worker và cài đặt cần HTTPS
+(hoặc localhost khi phát triển). Website không cần Node.js ở máy chủ.
+
+3. CẤU HÌNH GOOGLE SHEETS
+a) Mở tệp Google Sheets muốn lưu, chọn Tiện ích mở rộng > Apps Script.
+b) Thay nội dung Code.gs bằng tệp Code.gs trong repo rồi lưu.
+c) Chọn Cài đặt dự án > Thuộc tính tập lệnh (Script Properties):
+   SPREADSHEET_ID = ID tệp Google Sheets, đoạn giữa /d/ và /edit trong URL.
+   SYNC_TOKEN = khóa bí mật ngẫu nhiên ít nhất 32 ký tự; nên dùng trình quản lý
+   mật khẩu tạo khóa dài 40 ký tự. Không đưa khóa vào repo hoặc gửi cho người khác.
+d) Triển khai > Bản triển khai mới > loại Ứng dụng web.
+   Thực thi dưới danh tính: Tôi (chủ sở hữu).
+   Ai có quyền truy cập: Bất kỳ ai (Anyone), để app ngoài Google gửi POST.
+   Endpoint kiểm tra SYNC_TOKEN cho mọi thao tác dữ liệu. Không dùng
+   "bất kỳ ai có tài khoản Google" vì trang đăng nhập có thể chặn kết nối ngoài.
+   Nếu tài khoản không cho phép Anyone thì chưa dùng được cách kết nối này.
+e) Bạn tự cấp quyền Google cho mã, triển khai và sao chép URL kết thúc /exec.
+f) Trong app > Tham số > Google Sheets: nhập URL và khóa.
+   Khóa chỉ lưu theo phiên mở trình duyệt, không nằm trong file sao lưu.
+g) Lần đầu chọn Gửi lên Sheets để tạo dữ liệu trong HANH_APP.
+   API tự tạo tab HANH_APP. Không sửa/xóa MIX 1 NEW hoặc các tab cũ.
+
+4. HAI CHIỀU VÀ CÁCH TRÁNH MẤT DỮ LIỆU
+- Tải từ Sheets: thay toàn bộ các tháng trên máy bằng dữ liệu HANH_APP;
+  ứng dụng yêu cầu xác nhận. Nên xuất bản sao lưu trước.
+- Gửi lên Sheets: thay dữ liệu HANH_APP bằng các tháng trên máy.
+- Sheets thay đổi sau phiên bản đã đọc: dừng và báo xung đột. Xuất sao lưu
+  máy, tải bản Sheets, rồi nhập lại thay đổi cần giữ; không tự gộp xung đột.
+- Lần gửi đầu tiên trong phiên sẽ kiểm tra Sheets và hỏi nếu đã có dữ liệu.
+- Không sửa trực tiếp Sheets cùng lúc đang gửi. Khóa API ngăn hai yêu cầu
+  API ghi đồng thời nhưng không khóa thao tác của người đang mở Google Sheets.
+- Mất mạng/timeout sau khi gửi: có thể server đã lưu. Kiểm tra Sheets hoặc
+  tải lại trước khi gửi tiếp; app không thông báo thành công khi chưa có phản hồi.
+- Ngoại tuyến vẫn nhập dữ liệu và tính toán; khi có mạng bấm đồng bộ.
+  Bản này không chạy đồng bộ nền khi app đóng và không tự hòa trộn dữ liệu.
+
+5. SỬA DỮ LIỆU TRỰC TIẾP TRÊN HANH_APP
+Mỗi dòng có MONTH (YYYY-MM), TYPE (SETTINGS/cash/ntu), ID cố định.
+cash: sửa NAME, CONTRACT, GROUP (COF/NON), KIND và AMOUNT.
+KIND: period=thu kỳ; overdue=quá hạn; b3…b12=thanh lý B3…B12;
+cof=thanh lý hệ số 1,5 kể cả NON13+/PDS; exception=hệ số MANUAL_RATE.
+ntu: sửa NAME, CONTRACT, AMOUNT, POS, MINDUE, MANUAL_RATE, OVERRIDE_RATE.
+Hệ số ghi dạng 0.05, 0.1, 0.15, 0.2 (không dùng số 5 để biểu thị 5%).
+OVERRIDE_RATE trống: tự tính 20% nếu đủ thanh lý, nếu chưa thì dùng MANUAL_RATE.
+Các mã hợp đồng lưu dạng văn bản để giữ số 0 đầu. Không nhập công thức.
+SETTINGS_JSON chứa tham số tháng, nên sửa qua giao diện app để tránh sai JSON.
+Không đổi tên tab/cột, không xóa dòng SETTINGS, không lặp ID trong cùng bảng/tháng.
+Sau khi sửa Sheets, chọn Tải từ Sheets để app tính lại KPI và thu nhập.
+
+6. CÀI LÊN ĐIỆN THOẠI VÀ NGOẠI TUYẾN
+iPhone: mở địa chỉ HTTPS bằng Safari > Chia sẻ > Thêm vào MH chính.
+Android: Chrome > menu ba chấm > Cài đặt ứng dụng/Thêm vào màn hình chính.
+Hoặc chọn Tham số > Cài / Xem hướng dẫn.
+Mở lần đầu khi có mạng. Chờ thông báo bộ nhớ ngoại tuyến đã sẵn sàng.
+Sau đó thử bật chế độ máy bay, mở lại và nhập một khoản mô phỏng.
+Xóa dữ liệu trình duyệt hoặc gỡ ứng dụng có thể làm mất dữ liệu chưa sao lưu.
+Phiên cài màn hình chính có thể dùng kho dữ liệu khác phiên trình duyệt:
+nếu không thấy dữ liệu hãy tải từ Sheets hoặc nhập bản sao lưu.
+Cập nhật web: đóng toàn bộ cửa sổ ứng dụng rồi mở lại khi có mạng.
+
+7. KIỂM TRA TRƯỚC KHI DÙNG THẬT
+- Xuất bản sao lưu JSON tại Tham số.
+- Thử trên một tệp Google Sheets trống trước: gửi, sửa AMOUNT trên Sheets,
+  tải lại, đối chiếu tiền thu và KPI.
+- Thử sửa hai thiết bị để kiểm tra báo xung đột.
+- Thu đủ mindue mới bật POS và tiền trách nhiệm; 68% đủ bonus, 85% thêm trách nhiệm.
+- Biểu thuế khởi tạo lấy từ bảng nguồn, chưa xác minh pháp lý; chỉnh theo thực tế.
+- Việc triển khai Apps Script, quyền truy cập và thử kết nối thiết bị thật
+  phải hoàn tất trước khi coi đồng bộ/ngoại tuyến đã kiểm chứng đầu cuối.
+
+8. LỖI THƯỜNG GẶP
+Sai khóa: kiểm tra SYNC_TOKEN trong Script Properties.
+Failed to fetch/không đọc được JSON: dùng /exec đúng bản triển khai, quyền Anyone,
+kiểm tra mạng và việc Google yêu cầu đăng nhập. Không dùng /dev hoặc mode no-cors.
+Code.gs thay đổi: cập nhật bản triển khai web app sang phiên bản mới.
+Lỗi dòng dữ liệu: kiểm tra tháng, số tiền, ID, tỷ lệ và dòng SETTINGS_JSON.

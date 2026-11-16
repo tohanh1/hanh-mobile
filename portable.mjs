@@ -1,2 +1,0 @@
-import fs from 'node:fs';
-let html=fs.readFileSync('dist/index.html','utf8');const css=fs.readFileSync('dist/style.css','utf8'),model=fs.readFileSync('dist/model.js','utf8').replaceAll('export ',''),app=fs.readFileSync('dist/app.js','utf8').replace(/^import .*?;\r?\n/,'');html=html.replace('<link rel="stylesheet" href="style.css">','<style>'+css+'</style>').replace('<script type="module" src="app.js"></script>','<script type="module">'+model+'\n'+app+'</script>');fs.writeFileSync('../HANH-Mobile.html',html);
