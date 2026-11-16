@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';import {seed,calculate,ntuRow,factor,rate,bands} from './dist/model.js';
+const d=seed(),c=calculate(d);assert.equal(c.actual,2760000);assert.equal(c.pos,2067000);assert.equal(c.lit,27950000);assert.equal(c.responsibility,22500);assert.equal(c.net,7100000);assert.ok(Math.abs(c.total-.1709886421622373)<1e-10);
+const r={pos:10000000,mindue:500000,amount:300000,manual:.1,override:null};assert.equal(ntuRow(r).responsibility,0);r.amount=500000;assert.equal(ntuRow(r).lit,10000000);assert.equal(ntuRow(r).responsibility,50000);r.amount=800000;assert.equal(ntuRow(r).responsibility,80000);r.amount=10000000;assert.equal(ntuRow(r).hs,.2);r.override=.15;assert.equal(ntuRow(r).hs,.15);r.override=null;r.amount=400000;assert.equal(ntuRow(r).lit,0);assert.equal(ntuRow(r).hs,.1);
+assert.equal(factor({kind:'cof',group:'NON'}),1.5);assert.equal(factor({kind:'exception',manual:1.23}),1.23);assert.equal(rate(bands.bonus,.8),.05);assert.equal(rate(bands.bonus,.9),.075);
+const sim=structuredClone(d);sim.cash.push({group:'COF',kind:'cof',amount:50000000});const sc=calculate(sim);assert.equal(calculate(d).cof,1500000);assert.equal(sc.net,c.net);assert.ok(sc.total>c.total);sim.settings.done=5;assert.equal(calculate(sim).ntuKpi,1.25);
+for(const [ratio,full,resp] of [[.6799,false,false],[.68,true,false],[.8499,true,false],[.85,true,true]]){const t=structuredClone(sim);t.ntu=[{pos:ratio*100000000,mindue:100,amount:100,manual:.1,override:null},{pos:(1-ratio)*100000000,mindue:100,amount:0,manual:.1,override:null}];const v=calculate(t);assert.equal(v.paidBonus,v.bonus*(full?1:.8));assert.equal(v.paidResponsibility,resp?10:0);}
+console.log('Passed: base reconciliation, mindue, liquidation, override, bonus boundaries, NTU 68/85%, independent simulation and >100% KPI.');
+
+
